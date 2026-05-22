@@ -7,6 +7,7 @@ import { Initiative } from '@/lib/types'
 import InitiativeForm from '@/components/InitiativeForm'
 import DeleteInitiativeButton from '@/components/DeleteInitiativeButton'
 import ScoreBreakdown from '@/components/ScoreBreakdown'
+import RoiBreakdown from '@/components/RoiBreakdown'
 
 export default function InitiativeDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -34,6 +35,7 @@ export default function InitiativeDetailPage() {
         <DeleteInitiativeButton id={initiative.id} />
       </div>
       <ScoreBreakdown initiative={initiative} />
+      <RoiBreakdown initiative={initiative} />
       <div>
         <h3 className="text-sm font-medium text-neutral-400 mb-4">Edit</h3>
         <InitiativeForm initiative={initiative} />

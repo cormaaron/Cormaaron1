@@ -23,15 +23,15 @@ export default function BriefsPage() {
     <div className="max-w-5xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-white">Executive Briefs</h2>
-          <p className="text-sm text-neutral-400 mt-1">AI-generated portfolio summaries</p>
+          <h2 className="text-xl font-semibold text-white">Decision Memos</h2>
+          <p className="text-sm text-neutral-400 mt-1">AI-generated executive decision memos</p>
         </div>
         <GenerateBriefButton onGenerated={brief => setBriefs(b => [brief, ...b])} />
       </div>
 
       {briefs.length === 0 ? (
         <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-16 text-center">
-          <p className="text-neutral-500 text-sm">No briefs generated yet.</p>
+          <p className="text-neutral-500 text-sm">No memos generated yet.</p>
           <p className="text-neutral-600 text-xs mt-1">Generate one using the button above.</p>
         </div>
       ) : (
