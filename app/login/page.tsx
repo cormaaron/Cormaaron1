@@ -7,44 +7,52 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [mode, setMode] = useState<'login' | 'signup'>('login')
-  const [error, setError] = useState('')
-  const [message, setMessage] = useState('')
+  const [status, setStatus] = useState('')
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setError('')
-    setMessage('')
     setLoading(true)
+    setStatus('Step 1: Creating client…')
 
-    const supabase = createClient()
-    setMessage('Connecting…')
-
-    const timer = setTimeout(() => {
-      setError('Timed out after 10s. Check your connection or try again.')
-      setMessage('')
+    let supabase
+    try {
+      supabase = createClient()
+      setStatus('Step 2: Client created. Calling auth…')
+    } catch (err: unknown) {
+      setStatus('Error creating client: ' + (err instanceof Error ? err.message : String(err)))
       setLoading(false)
-    }, 10000)
+      return
+    }
 
     try {
       if (mode === 'login') {
-        setMessage('Signing in…')
-        const { error: err } = await supabase.auth.signInWithPassword({ email, password })
-        clearTimeout(timer)
-        if (err) { setError(err.message); setMessage(''); setLoading(false) }
-        else { setMessage('Success! Loading…'); window.location.href = '/' }
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+        if (error) {
+          setStatus('Auth error: ' + error.message)
+          setLoading(false)
+        } else if (data.session) {
+          setStatus('Step 3: Signed in! Redirecting…')
+          window.location.href = '/'
+        } else {
+          setStatus('No session returned — unexpected')
+          setLoading(false)
+        }
       } else {
-        setMessage('Creating account…')
-        const { data, error: err } = await supabase.auth.signUp({ email, password })
-        clearTimeout(timer)
-        if (err) { setError(err.message); setMessage(''); setLoading(false) }
-        else if (data.session) { setMessage('Success! Loading…'); window.location.href = '/' }
-        else { setMessage('Check your email for a confirmation link.'); setLoading(false) }
+        const { data, error } = await supabase.auth.signUp({ email, password })
+        if (error) {
+          setStatus('Signup error: ' + error.message)
+          setLoading(false)
+        } else if (data.session) {
+          setStatus('Account created! Redirecting…')
+          window.location.href = '/'
+        } else {
+          setStatus('Check your email to confirm your account.')
+          setLoading(false)
+        }
       }
-    } catch (e: unknown) {
-      clearTimeout(timer)
-      setError(e instanceof Error ? e.message : 'Unexpected error')
-      setMessage('')
+    } catch (err: unknown) {
+      setStatus('Exception: ' + (err instanceof Error ? err.message : String(err)))
       setLoading(false)
     }
   }
@@ -75,15 +83,16 @@ export default function LoginPage() {
             className="w-full bg-neutral-900 border border-neutral-800 text-white placeholder-neutral-500 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-neutral-600"
           />
 
-          {error && <p className="text-red-400 text-xs">{error}</p>}
-          {message && <p className="text-emerald-400 text-xs">{message}</p>}
+          {status && (
+            <p className="text-xs p-2 rounded bg-neutral-800 text-neutral-300 break-all">{status}</p>
+          )}
 
           <button
             type="submit"
             disabled={loading}
             className="w-full bg-white text-neutral-900 font-medium rounded-lg px-4 py-3 text-sm hover:bg-neutral-100 disabled:opacity-50 transition-colors"
           >
-            {loading ? 'Please wait…' : mode === 'login' ? 'Sign in' : 'Create account'}
+            {loading ? 'Working…' : mode === 'login' ? 'Sign in' : 'Create account'}
           </button>
         </form>
 
