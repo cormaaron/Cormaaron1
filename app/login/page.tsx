@@ -18,20 +18,33 @@ export default function LoginPage() {
     setLoading(true)
 
     const supabase = createClient()
+    setMessage('Connecting…')
+
+    const timer = setTimeout(() => {
+      setError('Timed out after 10s. Check your connection or try again.')
+      setMessage('')
+      setLoading(false)
+    }, 10000)
 
     try {
       if (mode === 'login') {
+        setMessage('Signing in…')
         const { error: err } = await supabase.auth.signInWithPassword({ email, password })
-        if (err) { setError(err.message); setLoading(false) }
-        else window.location.href = '/'
+        clearTimeout(timer)
+        if (err) { setError(err.message); setMessage(''); setLoading(false) }
+        else { setMessage('Success! Loading…'); window.location.href = '/' }
       } else {
+        setMessage('Creating account…')
         const { data, error: err } = await supabase.auth.signUp({ email, password })
-        if (err) { setError(err.message); setLoading(false) }
-        else if (data.session) window.location.href = '/'
+        clearTimeout(timer)
+        if (err) { setError(err.message); setMessage(''); setLoading(false) }
+        else if (data.session) { setMessage('Success! Loading…'); window.location.href = '/' }
         else { setMessage('Check your email for a confirmation link.'); setLoading(false) }
       }
-    } catch {
-      setError('Something went wrong. Please try again.')
+    } catch (e: unknown) {
+      clearTimeout(timer)
+      setError(e instanceof Error ? e.message : 'Unexpected error')
+      setMessage('')
       setLoading(false)
     }
   }
