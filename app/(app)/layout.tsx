@@ -11,15 +11,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
 
   useEffect(() => {
-    const supabase = createClient()
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) {
-        router.replace('/login')
-      } else {
-        setEmail(user.email ?? '')
-        setReady(true)
-      }
-    })
+    try {
+      const supabase = createClient()
+      supabase.auth.getUser().then(({ data: { user } }) => {
+        if (!user) {
+          router.replace('/login')
+        } else {
+          setEmail(user.email ?? '')
+          setReady(true)
+        }
+      }).catch(() => router.replace('/login'))
+    } catch {
+      router.replace('/login')
+    }
   }, [router])
 
   if (!ready) {
