@@ -20,16 +20,32 @@ export default function LoginPage() {
     setLoading(true)
     const supabase = createClient()
 
-    if (mode === 'login') {
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
-      if (error) { setError(error.message); setLoading(false) }
-      else window.location.href = '/'
-    } else {
-      const { data, error } = await supabase.auth.signUp({ email, password })
-      if (error) { setError(error.message); setLoading(false) }
-      else if (data.session) window.location.href = '/'
-      else { setMessage('Check your email for a confirmation link.'); setLoading(false) }
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Request timed out — check your connection')), 10000)
+    )
+
+    try {
+      if (mode === 'login') {
+        const { error } = await Promise.race([
+          supabase.auth.signInWithPassword({ email, password }),
+          timeout,
+        ])
+        if (error) { setError(error.message); setLoading(false) }
+        else window.location.href = '/'
+      } else {
+        const { data, error } = await Promise.race([
+          supabase.auth.signUp({ email, password }),
+          timeout,
+        ])
+        if (error) { setError(error.message); setLoading(false) }
+        else if (data.session) window.location.href = '/'
+        else { setMessage('Check your email for a confirmation link.'); setLoading(false) }
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Something went wrong')
+      setLoading(false)
     }
+  }
   }
 
   return (
