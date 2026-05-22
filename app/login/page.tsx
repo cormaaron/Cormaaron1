@@ -96,6 +96,10 @@ export default function LoginPage() {
             {mode === 'login' ? 'Sign up' : 'Sign in'}
           </button>
         </p>
+
+        <p className="mt-4 text-center text-xs text-neutral-700">
+          {process.env.NEXT_PUBLIC_SUPABASE_URL ? '✓ config loaded' : '✗ config missing'}
+        </p>
       </div>
     </div>
   )
