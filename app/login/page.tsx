@@ -22,15 +22,14 @@ export default function LoginPage() {
 
     if (mode === 'login') {
       const { error } = await supabase.auth.signInWithPassword({ email, password })
-      if (error) setError(error.message)
-      else { router.push('/'); router.refresh() }
+      if (error) { setError(error.message); setLoading(false) }
+      else window.location.href = '/'
     } else {
       const { data, error } = await supabase.auth.signUp({ email, password })
-      if (error) setError(error.message)
-      else if (data.session) { router.push('/'); router.refresh() }
-      else setMessage('Check your email for a confirmation link.')
+      if (error) { setError(error.message); setLoading(false) }
+      else if (data.session) window.location.href = '/'
+      else { setMessage('Check your email for a confirmation link.'); setLoading(false) }
     }
-    setLoading(false)
   }
 
   return (
