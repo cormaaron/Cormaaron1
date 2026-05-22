@@ -9,24 +9,26 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [error, setError] = useState('')
+  const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+    setMessage('')
     setLoading(true)
     const supabase = createClient()
 
-    const { error } = mode === 'login'
-      ? await supabase.auth.signInWithPassword({ email, password })
-      : await supabase.auth.signUp({ email, password })
-
-    if (error) {
-      setError(error.message)
+    if (mode === 'login') {
+      const { error } = await supabase.auth.signInWithPassword({ email, password })
+      if (error) setError(error.message)
+      else { router.push('/'); router.refresh() }
     } else {
-      router.push('/')
-      router.refresh()
+      const { data, error } = await supabase.auth.signUp({ email, password })
+      if (error) setError(error.message)
+      else if (data.session) { router.push('/'); router.refresh() }
+      else setMessage('Check your email for a confirmation link.')
     }
     setLoading(false)
   }
@@ -58,6 +60,7 @@ export default function LoginPage() {
           />
 
           {error && <p className="text-red-400 text-xs">{error}</p>}
+          {message && <p className="text-emerald-400 text-xs">{message}</p>}
 
           <button
             type="submit"
