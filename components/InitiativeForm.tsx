@@ -9,13 +9,12 @@ const STATUSES: InitiativeStatus[] = ['active', 'paused', 'completed', 'cancelle
 
 function ScoreInput({
   label,
-  name,
   value,
   onChange,
   hint,
 }: {
   label: string
-  name: string
+  name?: string
   value: number
   onChange: (v: number) => void
   hint: string

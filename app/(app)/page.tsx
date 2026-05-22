@@ -33,7 +33,6 @@ export default async function DashboardPage() {
   const avgScore = active.length
     ? (active.reduce((s, i) => s + Number(i.composite_score), 0) / active.length).toFixed(1)
     : '—'
-  const highValue = active.filter(i => Number(i.composite_score) >= 7).length
   const atRisk = active.filter(i => Number(i.composite_score) < 5).length
 
   return (
