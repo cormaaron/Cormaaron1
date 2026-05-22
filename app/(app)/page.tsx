@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Initiative, getRecommendation, formatCurrency, Recommendation } from '@/lib/types'
+import { Initiative, getRecommendation, formatCurrency, Recommendation, PortfolioChallenge } from '@/lib/types'
 import ScoreBar from '@/components/ScoreBar'
 import Link from 'next/link'
 
@@ -21,11 +21,14 @@ function scoreColor(score: number) {
 
 export default function DashboardPage() {
   const [list, setList] = useState<Initiative[]>([])
+  const [latestChallenge, setLatestChallenge] = useState<PortfolioChallenge | null>(null)
 
   useEffect(() => {
     const supabase = createClient()
     supabase.from('initiatives').select('*').order('composite_score', { ascending: false })
       .then(({ data }) => setList((data ?? []) as Initiative[]))
+    supabase.from('portfolio_challenges').select('*').order('created_at', { ascending: false }).limit(1).single()
+      .then(({ data }) => { if (data) setLatestChallenge(data as PortfolioChallenge) })
   }, [])
 
   const active = list.filter(i => i.status === 'active')
@@ -85,6 +88,32 @@ export default function DashboardPage() {
       <div>
         <h2 className="text-xl font-semibold text-white">Portfolio Dashboard</h2>
         <p className="text-sm text-neutral-400 mt-1">{list.length} initiative{list.length !== 1 ? 's' : ''} tracked</p>
+      </div>
+
+      {/* Portfolio Intelligence banner */}
+      <div className="bg-neutral-900 border border-neutral-800 rounded-xl px-5 py-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-widest text-neutral-500 mb-1.5">Portfolio Intelligence</p>
+            {latestChallenge ? (
+              <>
+                <p className="text-sm text-neutral-200 leading-relaxed line-clamp-2">
+                  {latestChallenge.content.portfolio_diagnosis}
+                </p>
+                <p className="text-xs text-neutral-600 mt-1.5">
+                  Last analyzed {new Date(latestChallenge.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  {' · '}
+                  <Link href="/challenge" className="text-neutral-400 hover:text-white transition-colors">View full analysis →</Link>
+                </p>
+              </>
+            ) : (
+              <p className="text-sm text-neutral-500">
+                Run a portfolio challenge to get AI-powered strategic critique.{' '}
+                <Link href="/challenge" className="text-neutral-300 hover:text-white transition-colors">Start analysis →</Link>
+              </p>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* KPI row */}

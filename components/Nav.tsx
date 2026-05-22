@@ -7,7 +7,10 @@ import { createClient } from '@/lib/supabase/client'
 const links = [
   { href: '/', label: 'Dashboard' },
   { href: '/initiatives', label: 'Initiatives' },
+  { href: '/challenge', label: 'Challenge Portfolio' },
+  { href: '/scenarios', label: 'Scenarios' },
   { href: '/briefs', label: 'Decision Memos' },
+  { href: '/memory', label: 'Strategy Memory' },
 ]
 
 export default function Nav({ userEmail }: { userEmail: string }) {

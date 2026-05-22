@@ -67,6 +67,8 @@ export default function InitiativeForm({ initiative }: { initiative?: Initiative
     description: initiative?.description ?? '',
     owner: initiative?.owner ?? '',
     status: (initiative?.status ?? 'active') as InitiativeStatus,
+    business_unit: initiative?.business_unit ?? '',
+    strategic_objective: initiative?.strategic_objective ?? '',
     business_value: initiative?.business_value ?? 5,
     feasibility: initiative?.feasibility ?? 5,
     readiness: initiative?.readiness ?? 5,
@@ -161,6 +163,27 @@ export default function InitiativeForm({ initiative }: { initiative?: Initiative
                 <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
               ))}
             </select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="text-sm text-neutral-300 block mb-1.5">Business Unit</label>
+            <input
+              type="text" value={form.business_unit}
+              onChange={e => setForm(f => ({ ...f, business_unit: e.target.value }))}
+              className="w-full bg-neutral-900 border border-neutral-800 text-white placeholder-neutral-600 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-neutral-600"
+              placeholder="e.g. Operations, Finance"
+            />
+          </div>
+          <div>
+            <label className="text-sm text-neutral-300 block mb-1.5">Strategic Objective</label>
+            <input
+              type="text" value={form.strategic_objective}
+              onChange={e => setForm(f => ({ ...f, strategic_objective: e.target.value }))}
+              className="w-full bg-neutral-900 border border-neutral-800 text-white placeholder-neutral-600 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-neutral-600"
+              placeholder="e.g. Cost reduction, Growth"
+            />
           </div>
         </div>
       </div>
