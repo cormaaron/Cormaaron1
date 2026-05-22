@@ -1,5 +1,7 @@
-export const dynamic = 'force-dynamic'
-import { createClient } from '@/lib/supabase/server'
+'use client'
+
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import { Initiative } from '@/lib/types'
 import Link from 'next/link'
 import ScoreBar from '@/components/ScoreBar'
@@ -14,14 +16,14 @@ function statusBadge(status: string) {
   return map[status] ?? map.active
 }
 
-export default async function InitiativesPage() {
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from('initiatives')
-    .select('*')
-    .order('composite_score', { ascending: false })
+export default function InitiativesPage() {
+  const [initiatives, setInitiatives] = useState<Initiative[]>([])
 
-  const initiatives = (data ?? []) as Initiative[]
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.from('initiatives').select('*').order('composite_score', { ascending: false })
+      .then(({ data }) => setInitiatives((data ?? []) as Initiative[]))
+  }, [])
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
@@ -30,10 +32,7 @@ export default async function InitiativesPage() {
           <h2 className="text-xl font-semibold text-white">Initiatives</h2>
           <p className="text-sm text-neutral-400 mt-1">{initiatives.length} total</p>
         </div>
-        <Link
-          href="/initiatives/new"
-          className="bg-white text-neutral-900 text-sm font-medium px-4 py-2 rounded-lg hover:bg-neutral-100 transition-colors"
-        >
+        <Link href="/initiatives/new" className="bg-white text-neutral-900 text-sm font-medium px-4 py-2 rounded-lg hover:bg-neutral-100 transition-colors">
           New initiative
         </Link>
       </div>
@@ -47,10 +46,7 @@ export default async function InitiativesPage() {
           {initiatives.map(initiative => (
             <div key={initiative.id} className="grid grid-cols-12 items-center gap-4 px-5 py-4">
               <div className="col-span-5">
-                <Link
-                  href={`/initiatives/${initiative.id}`}
-                  className="text-sm font-medium text-white hover:text-neutral-300 transition-colors"
-                >
+                <Link href={`/initiatives/${initiative.id}`} className="text-sm font-medium text-white hover:text-neutral-300 transition-colors">
                   {initiative.name}
                 </Link>
                 {initiative.description && (
@@ -58,22 +54,16 @@ export default async function InitiativesPage() {
                 )}
               </div>
               <div className="col-span-2">
-                {initiative.owner && (
-                  <p className="text-xs text-neutral-400 truncate">{initiative.owner}</p>
-                )}
+                {initiative.owner && <p className="text-xs text-neutral-400 truncate">{initiative.owner}</p>}
               </div>
               <div className="col-span-2">
                 <span className={`text-xs px-2 py-0.5 rounded-full border ${statusBadge(initiative.status)}`}>
                   {initiative.status}
                 </span>
               </div>
-              <div className="col-span-2">
-                <ScoreBar score={Number(initiative.composite_score)} />
-              </div>
+              <div className="col-span-2"><ScoreBar score={Number(initiative.composite_score)} /></div>
               <div className="col-span-1 text-right">
-                <span className="text-sm font-semibold text-white">
-                  {Number(initiative.composite_score).toFixed(1)}
-                </span>
+                <span className="text-sm font-semibold text-white">{Number(initiative.composite_score).toFixed(1)}</span>
               </div>
             </div>
           ))}

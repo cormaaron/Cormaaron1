@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -11,41 +10,30 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
-  const router = useRouter()
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
     setMessage('')
     setLoading(true)
-    const supabase = createClient()
 
-    const timeout = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('Request timed out — check your connection')), 10000)
-    )
+    const supabase = createClient()
 
     try {
       if (mode === 'login') {
-        const { error } = await Promise.race([
-          supabase.auth.signInWithPassword({ email, password }),
-          timeout,
-        ])
-        if (error) { setError(error.message); setLoading(false) }
+        const { error: err } = await supabase.auth.signInWithPassword({ email, password })
+        if (err) { setError(err.message); setLoading(false) }
         else window.location.href = '/'
       } else {
-        const { data, error } = await Promise.race([
-          supabase.auth.signUp({ email, password }),
-          timeout,
-        ])
-        if (error) { setError(error.message); setLoading(false) }
+        const { data, error: err } = await supabase.auth.signUp({ email, password })
+        if (err) { setError(err.message); setLoading(false) }
         else if (data.session) window.location.href = '/'
         else { setMessage('Check your email for a confirmation link.'); setLoading(false) }
       }
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Something went wrong')
+    } catch {
+      setError('Something went wrong. Please try again.')
       setLoading(false)
     }
-  }
   }
 
   return (

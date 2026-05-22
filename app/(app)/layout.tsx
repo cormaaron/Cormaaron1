@@ -1,26 +1,41 @@
-export const dynamic = 'force-dynamic'
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import { isRedirectError } from 'next/dist/client/components/redirect-error'
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import Nav from '@/components/Nav'
 
-export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+export default function AppLayout({ children }: { children: React.ReactNode }) {
+  const [email, setEmail] = useState<string | null>(null)
+  const [ready, setReady] = useState(false)
+  const router = useRouter()
 
-    if (!user) redirect('/login')
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) {
+        router.replace('/login')
+      } else {
+        setEmail(user.email ?? '')
+        setReady(true)
+      }
+    })
+  }, [router])
 
+  if (!ready) {
     return (
-      <div className="flex min-h-screen">
-        <Nav userEmail={user.email ?? ''} />
-        <main className="flex-1 ml-56 p-8 overflow-auto">
-          {children}
-        </main>
+      <div className="min-h-screen bg-neutral-950 flex items-center justify-center">
+        <div className="w-4 h-4 rounded-full bg-neutral-600 animate-pulse" />
       </div>
     )
-  } catch (error) {
-    if (isRedirectError(error)) throw error
-    redirect('/login')
   }
+
+  return (
+    <div className="flex min-h-screen">
+      <Nav userEmail={email ?? ''} />
+      <main className="flex-1 ml-56 p-8 overflow-auto">
+        {children}
+      </main>
+    </div>
+  )
 }

@@ -1,5 +1,7 @@
-export const dynamic = 'force-dynamic'
-import { createClient } from '@/lib/supabase/server'
+'use client'
+
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import { Initiative } from '@/lib/types'
 import ScoreBar from '@/components/ScoreBar'
 import Link from 'next/link'
@@ -20,14 +22,14 @@ function statusBadge(status: string) {
   return map[status] ?? map.active
 }
 
-export default async function DashboardPage() {
-  const supabase = await createClient()
-  const { data: initiatives } = await supabase
-    .from('initiatives')
-    .select('*')
-    .order('composite_score', { ascending: false })
+export default function DashboardPage() {
+  const [list, setList] = useState<Initiative[]>([])
 
-  const list = (initiatives ?? []) as Initiative[]
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.from('initiatives').select('*').order('composite_score', { ascending: false })
+      .then(({ data }) => setList((data ?? []) as Initiative[]))
+  }, [])
 
   const active = list.filter(i => i.status === 'active')
   const avgScore = active.length
@@ -39,12 +41,9 @@ export default async function DashboardPage() {
     <div className="max-w-5xl mx-auto space-y-8">
       <div>
         <h2 className="text-xl font-semibold text-white">Portfolio Dashboard</h2>
-        <p className="text-sm text-neutral-400 mt-1">
-          {list.length} initiative{list.length !== 1 ? 's' : ''} tracked
-        </p>
+        <p className="text-sm text-neutral-400 mt-1">{list.length} initiative{list.length !== 1 ? 's' : ''} tracked</p>
       </div>
 
-      {/* KPI strip */}
       <div className="grid grid-cols-3 gap-4">
         {[
           { label: 'Active Initiatives', value: active.length },
@@ -58,7 +57,6 @@ export default async function DashboardPage() {
         ))}
       </div>
 
-      {/* Top initiatives */}
       <div>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-medium text-neutral-300">Initiative Rankings</h3>
@@ -81,23 +79,16 @@ export default async function DashboardPage() {
                 <span className="text-sm text-neutral-600 w-5 text-right">{idx + 1}</span>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <Link
-                      href={`/initiatives/${initiative.id}`}
-                      className="text-sm font-medium text-white hover:text-neutral-300 transition-colors truncate"
-                    >
+                    <Link href={`/initiatives/${initiative.id}`} className="text-sm font-medium text-white hover:text-neutral-300 transition-colors truncate">
                       {initiative.name}
                     </Link>
                     <span className={`text-xs px-2 py-0.5 rounded-full ${statusBadge(initiative.status)}`}>
                       {initiative.status}
                     </span>
                   </div>
-                  {initiative.owner && (
-                    <p className="text-xs text-neutral-500 mt-0.5">{initiative.owner}</p>
-                  )}
+                  {initiative.owner && <p className="text-xs text-neutral-500 mt-0.5">{initiative.owner}</p>}
                 </div>
-                <div className="w-32">
-                  <ScoreBar score={Number(initiative.composite_score)} />
-                </div>
+                <div className="w-32"><ScoreBar score={Number(initiative.composite_score)} /></div>
                 <div className={`text-sm font-semibold w-10 text-right ${scoreColor(Number(initiative.composite_score))}`}>
                   {Number(initiative.composite_score).toFixed(1)}
                 </div>
@@ -107,7 +98,6 @@ export default async function DashboardPage() {
         )}
       </div>
 
-      {/* Score legend */}
       <div className="bg-neutral-900/50 border border-neutral-800/50 rounded-xl p-5">
         <p className="text-xs text-neutral-500 font-medium uppercase tracking-wider mb-3">Scoring weights</p>
         <div className="grid grid-cols-4 gap-4">

@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Brief } from '@/lib/types'
 
-export default function GenerateBriefButton() {
+export default function GenerateBriefButton({ onGenerated }: { onGenerated?: (brief: Brief) => void }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
@@ -17,9 +18,10 @@ export default function GenerateBriefButton() {
 
     if (!res.ok) {
       setError(json.error ?? 'Failed to generate brief')
+      setLoading(false)
     } else {
+      if (onGenerated) onGenerated(json.brief)
       router.push(`/briefs/${json.brief.id}`)
-      router.refresh()
     }
     setLoading(false)
   }
