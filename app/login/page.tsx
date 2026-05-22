@@ -7,53 +7,38 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [mode, setMode] = useState<'login' | 'signup'>('login')
-  const [status, setStatus] = useState('')
+  const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
-    setStatus('Step 1: Creating client…')
+    setError('')
 
-    let supabase
-    try {
-      supabase = createClient()
-      setStatus('Step 2: Client created. Calling auth…')
-    } catch (err: unknown) {
-      setStatus('Error creating client: ' + (err instanceof Error ? err.message : String(err)))
-      setLoading(false)
-      return
-    }
+    const supabase = createClient()
 
-    try {
-      if (mode === 'login') {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-        if (error) {
-          setStatus('Auth error: ' + error.message)
-          setLoading(false)
-        } else if (data.session) {
-          setStatus('Step 3: Signed in! Redirecting…')
-          window.location.href = '/'
-        } else {
-          setStatus('No session returned — unexpected')
-          setLoading(false)
-        }
+    if (mode === 'login') {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+      if (error) {
+        setError(error.message)
+        setLoading(false)
+      } else if (data.session) {
+        window.location.href = '/'
       } else {
-        const { data, error } = await supabase.auth.signUp({ email, password })
-        if (error) {
-          setStatus('Signup error: ' + error.message)
-          setLoading(false)
-        } else if (data.session) {
-          setStatus('Account created! Redirecting…')
-          window.location.href = '/'
-        } else {
-          setStatus('Check your email to confirm your account.')
-          setLoading(false)
-        }
+        setError('No session returned — please try again.')
+        setLoading(false)
       }
-    } catch (err: unknown) {
-      setStatus('Exception: ' + (err instanceof Error ? err.message : String(err)))
-      setLoading(false)
+    } else {
+      const { data, error } = await supabase.auth.signUp({ email, password })
+      if (error) {
+        setError(error.message)
+        setLoading(false)
+      } else if (data.session) {
+        window.location.href = '/'
+      } else {
+        setError('Check your email to confirm your account.')
+        setLoading(false)
+      }
     }
   }
 
@@ -83,8 +68,8 @@ export default function LoginPage() {
             className="w-full bg-neutral-900 border border-neutral-800 text-white placeholder-neutral-500 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-neutral-600"
           />
 
-          {status && (
-            <p className="text-xs p-2 rounded bg-neutral-800 text-neutral-300 break-all">{status}</p>
+          {error && (
+            <p className="text-xs p-2 rounded bg-neutral-800 text-red-400 break-all">{error}</p>
           )}
 
           <button
@@ -104,10 +89,6 @@ export default function LoginPage() {
           >
             {mode === 'login' ? 'Sign up' : 'Sign in'}
           </button>
-        </p>
-
-        <p className="mt-4 text-center text-xs text-neutral-700">
-          {process.env.NEXT_PUBLIC_SUPABASE_URL ? '✓ config loaded' : '✗ config missing'}
         </p>
       </div>
     </div>
