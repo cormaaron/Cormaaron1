@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { createClient, authHeaders } from '@/lib/supabase/client'
 import { PortfolioChallenge, ChallengeContent } from '@/lib/types'
 
 const REPORT_SECTIONS: { key: keyof ChallengeContent; label: string; accent: string }[] = [
@@ -50,7 +50,7 @@ export default function ChallengePage() {
     setLoading(true)
     setError('')
     try {
-      const res = await fetch('/api/challenge', { method: 'POST' })
+      const res = await fetch('/api/challenge', { method: 'POST', headers: await authHeaders() })
       const json = await res.json()
       if (!res.ok) {
         setError(json.error ?? 'Challenge failed')

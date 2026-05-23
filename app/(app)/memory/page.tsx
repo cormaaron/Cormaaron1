@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { StrategyDecision, DecisionType } from '@/lib/types'
+import { authHeaders } from '@/lib/supabase/client'
 
 const TYPE_STYLE: Record<DecisionType, { label: string; color: string }> = {
   approved:  { label: 'Approved',  color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
@@ -32,7 +33,7 @@ export default function MemoryPage() {
   }, [])
 
   async function fetchDecisions() {
-    const res = await fetch('/api/decisions')
+    const res = await fetch('/api/decisions', { headers: await authHeaders() })
     const json = await res.json()
     if (json.decisions) setDecisions(json.decisions)
   }
@@ -42,7 +43,7 @@ export default function MemoryPage() {
     setSaving(true)
     const res = await fetch('/api/decisions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...await authHeaders() },
       body: JSON.stringify({
         decision_type: form.decision_type,
         title: form.title,
@@ -65,7 +66,7 @@ export default function MemoryPage() {
   async function handleDelete(id: string) {
     await fetch('/api/decisions', {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...await authHeaders() },
       body: JSON.stringify({ id }),
     })
     setDecisions(d => d.filter(x => x.id !== id))

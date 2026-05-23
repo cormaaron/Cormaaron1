@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Brief } from '@/lib/types'
+import { authHeaders } from '@/lib/supabase/client'
 
 export default function GenerateBriefButton({ onGenerated }: { onGenerated?: (brief: Brief) => void }) {
   const [loading, setLoading] = useState(false)
@@ -13,7 +14,7 @@ export default function GenerateBriefButton({ onGenerated }: { onGenerated?: (br
     setError('')
     setLoading(true)
 
-    const res = await fetch('/api/briefs/generate', { method: 'POST' })
+    const res = await fetch('/api/briefs/generate', { method: 'POST', headers: await authHeaders() })
     const json = await res.json()
 
     if (!res.ok) {

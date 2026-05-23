@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { getAuthedClient } from '@/lib/supabase/api'
 
-export async function GET() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+export async function GET(req: Request) {
+  const { supabase, user, error } = await getAuthedClient(req)
+  if (error) return error
 
   const { data, error } = await supabase
     .from('strategy_decisions')
@@ -17,9 +16,8 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const { supabase, user, error } = await getAuthedClient(req)
+  if (error) return error
 
   const body = await req.json()
   const { decision_type, title, rationale, initiative_names } = body
@@ -39,9 +37,8 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE(req: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const { supabase, user, error } = await getAuthedClient(req)
+  if (error) return error
 
   const { id } = await req.json()
   const { error } = await supabase

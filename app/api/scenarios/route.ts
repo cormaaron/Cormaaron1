@@ -1,14 +1,13 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { getAuthedClient } from '@/lib/supabase/api'
 import OpenAI from 'openai'
 import { Initiative, formatPortfolioForAgents } from '@/lib/types'
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
 export async function POST(req: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const { supabase, user, error: authError } = await getAuthedClient(req)
+  if (authError) return authError
 
   const { scenario } = await req.json()
   if (!scenario) return NextResponse.json({ error: 'scenario is required' }, { status: 400 })

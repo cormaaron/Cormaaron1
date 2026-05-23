@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { ScenarioResult } from '@/lib/types'
+import { authHeaders } from '@/lib/supabase/client'
 
 const PRESETS = [
   'Reduce AI/transformation budget by 20% — identify what to cut and in what order',
@@ -27,7 +28,7 @@ export default function ScenariosPage() {
     try {
       const res = await fetch('/api/scenarios', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...await authHeaders() },
         body: JSON.stringify({ scenario: text }),
       })
       const json = await res.json()

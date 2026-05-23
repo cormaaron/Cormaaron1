@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { getAuthedClient } from '@/lib/supabase/api'
 import OpenAI from 'openai'
 import { Initiative, formatPortfolioForAgents } from '@/lib/types'
 
@@ -72,10 +72,9 @@ Return ONLY valid JSON with this exact structure:
   "initiatives_to_accelerate": [{"name": "exact initiative name", "reason": "one sharp sentence"}]
 }`
 
-export async function POST() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+export async function POST(req: Request) {
+  const { supabase, user, error } = await getAuthedClient(req)
+  if (error) return error
 
   const { data: initiatives } = await supabase
     .from('initiatives')
