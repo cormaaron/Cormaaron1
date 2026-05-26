@@ -1,6 +1,7 @@
 export type InitiativeStatus = 'active' | 'paused' | 'completed' | 'cancelled'
 export type Recommendation = 'accelerate' | 'continue' | 'watch' | 'stop'
 export type DecisionType = 'approved' | 'rejected' | 'deferred' | 'noted'
+export type DocType = 'strategy' | 'pmo' | 'memo' | 'other'
 
 export interface Initiative {
   id: string
@@ -72,6 +73,35 @@ export interface StrategyDecision {
   initiative_names: string[]
 }
 
+export interface StrategyDoc {
+  id: string
+  user_id: string
+  title: string
+  content: string
+  doc_type: DocType
+  created_at: string
+}
+
+export interface PortfolioSnapshot {
+  id: string
+  user_id: string
+  created_at: string
+  initiative_count: number
+  active_count: number
+  avg_score: number
+  total_budget: number
+  total_conf_adj_roi: number
+  at_risk_count: number
+  accelerate_count: number
+  stop_count: number
+  watch_count: number
+}
+
+export interface ChatMessage {
+  role: 'user' | 'assistant'
+  content: string
+}
+
 export interface ScenarioResult {
   scenario_name: string
   summary: string
@@ -95,7 +125,6 @@ export function getRecommendation(i: Initiative): Recommendation {
   const roi = Number(i.confidence_adjusted_roi ?? 0)
   const score = Number(i.composite_score ?? 0)
   const confidence = Number(i.confidence_level ?? 70)
-
   if (budget === 0) {
     if (score >= 7) return 'accelerate'
     if (score < 5) return 'watch'

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getAuthedClient } from '@/lib/supabase/api'
 import OpenAI from 'openai'
-import { Initiative, formatPortfolioForAgents } from '@/lib/types'
+import { Initiative, StrategyDoc, formatPortfolioForAgents } from '@/lib/types'
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
@@ -76,18 +76,22 @@ export async function POST(req: Request) {
   const { supabase, user, error } = await getAuthedClient(req)
   if (error) return error
 
-  const { data: initiatives } = await supabase
-    .from('initiatives')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('composite_score', { ascending: false })
+  const [{ data: initiatives }, { data: docs }] = await Promise.all([
+    supabase.from('initiatives').select('*').eq('user_id', user.id).order('composite_score', { ascending: false }),
+    supabase.from('strategy_docs').select('*').eq('user_id', user.id),
+  ])
 
   const list = (initiatives ?? []) as Initiative[]
   if (list.length === 0) {
     return NextResponse.json({ error: 'No initiatives to analyze' }, { status: 400 })
   }
 
-  const portfolio = formatPortfolioForAgents(list)
+  const docList = (docs ?? []) as StrategyDoc[]
+  const docsContext = docList.length > 0
+    ? `\n\nOrganization Strategy Documents:\n${docList.map(d => `[${d.title}]\n${d.content}`).join('\n---\n')}`
+    : ''
+
+  const portfolio = formatPortfolioForAgents(list) + docsContext
 
   const [analyst, cfo, transformation, strategy] = await Promise.all([
     runAgent(ANALYST_PROMPT, portfolio),

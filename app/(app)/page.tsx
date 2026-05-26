@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Initiative, getRecommendation, formatCurrency, Recommendation, PortfolioChallenge } from '@/lib/types'
+import { Initiative, getRecommendation, formatCurrency, Recommendation, PortfolioChallenge, PortfolioSnapshot } from '@/lib/types'
+import { authHeaders } from '@/lib/supabase/client'
 import ScoreBar from '@/components/ScoreBar'
 import Link from 'next/link'
 
@@ -22,6 +23,8 @@ function scoreColor(score: number) {
 export default function DashboardPage() {
   const [list, setList] = useState<Initiative[]>([])
   const [latestChallenge, setLatestChallenge] = useState<PortfolioChallenge | null>(null)
+  const [snapshots, setSnapshots] = useState<PortfolioSnapshot[]>([])
+  const [snapshotting, setSnapshotting] = useState(false)
 
   useEffect(() => {
     const supabase = createClient()
@@ -29,7 +32,23 @@ export default function DashboardPage() {
       .then(({ data }) => setList((data ?? []) as Initiative[]))
     supabase.from('portfolio_challenges').select('*').order('created_at', { ascending: false }).limit(1).single()
       .then(({ data }) => { if (data) setLatestChallenge(data as PortfolioChallenge) })
+    authHeaders().then(headers =>
+      fetch('/api/snapshots', { headers }).then(r => r.json()).then(json => {
+        if (json.snapshots) setSnapshots(json.snapshots)
+      })
+    )
   }, [])
+
+  async function takeSnapshot() {
+    setSnapshotting(true)
+    const res = await fetch('/api/snapshots', { method: 'POST', headers: await authHeaders() })
+    const json = await res.json()
+    if (json.snapshot) setSnapshots(s => [json.snapshot, ...s])
+    setSnapshotting(false)
+  }
+
+  const prev = snapshots[1] ?? null
+  const curr = snapshots[0] ?? null
 
   const active = list.filter(i => i.status === 'active')
 
@@ -132,6 +151,37 @@ export default function DashboardPage() {
           <KpiCard label="Return Multiple" value={portfolioMultiple ? `${portfolioMultiple}x` : '—'} small />
         </div>
       )}
+
+      {/* Portfolio trend */}
+      <div className="bg-neutral-900 border border-neutral-800 rounded-xl px-5 py-4">
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-xs font-semibold uppercase tracking-widest text-neutral-500">Portfolio Trend</p>
+          <div className="flex items-center gap-3">
+            {curr && (
+              <p className="text-xs text-neutral-600">
+                Last snapshot: {new Date(curr.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              </p>
+            )}
+            <button
+              onClick={takeSnapshot}
+              disabled={snapshotting}
+              className="text-xs text-neutral-400 hover:text-white border border-neutral-700 hover:border-neutral-600 px-3 py-1 rounded-md transition-colors disabled:opacity-50"
+            >
+              {snapshotting ? 'Saving…' : 'Take Snapshot'}
+            </button>
+          </div>
+        </div>
+        {snapshots.length === 0 ? (
+          <p className="text-sm text-neutral-600">Take a snapshot to start tracking portfolio progress over time.</p>
+        ) : (
+          <div className="grid grid-cols-4 gap-6">
+            <TrendStat label="Avg Score" curr={curr?.avg_score} prev={prev?.avg_score} fmt={v => v.toFixed(1)} />
+            <TrendStat label="Active Initiatives" curr={curr?.active_count} prev={prev?.active_count} fmt={v => String(v)} />
+            <TrendStat label="Conf-Adj Value" curr={curr?.total_conf_adj_roi} prev={prev?.total_conf_adj_roi} fmt={v => formatCurrency(v)} />
+            <TrendStat label="Stop Signals" curr={curr?.stop_count} prev={prev?.stop_count} fmt={v => String(v)} invert />
+          </div>
+        )}
+      </div>
 
       {/* Action recommendations */}
       {active.length > 0 && (
@@ -255,6 +305,25 @@ function KpiCard({ label, value, small, valueColor }: {
       <p className={`font-semibold text-white mt-2 ${small ? 'text-xl' : 'text-3xl'} ${valueColor ?? 'text-white'}`}>
         {value}
       </p>
+    </div>
+  )
+}
+
+function TrendStat({ label, curr, prev, fmt, invert }: {
+  label: string; curr?: number; prev?: number; fmt: (v: number) => string; invert?: boolean
+}) {
+  const delta = curr !== undefined && prev !== undefined ? curr - prev : null
+  const positive = delta !== null ? (invert ? delta < 0 : delta > 0) : null
+  return (
+    <div>
+      <p className="text-xs text-neutral-500 mb-1">{label}</p>
+      <p className="text-sm font-semibold text-white">{curr !== undefined ? fmt(curr) : '—'}</p>
+      {delta !== null && delta !== 0 && (
+        <p className={`text-xs mt-0.5 ${positive ? 'text-emerald-400' : 'text-red-400'}`}>
+          {positive ? '↑' : '↓'} {fmt(Math.abs(delta))} vs prev
+        </p>
+      )}
+      {delta === 0 && <p className="text-xs text-neutral-600 mt-0.5">No change</p>}
     </div>
   )
 }
